@@ -1,32 +1,63 @@
 # ai-gh-account-router
 
-A small local wrapper for GitHub CLI (`gh`) that routes repository-scoped GitHub operations through the correct logged-in GitHub account.
+> **Make `gh` safe for AI agents on machines with multiple GitHub accounts.**
 
-It is designed for AI/Codex workflows on machines where multiple GitHub accounts are logged in through `gh auth login`.
+`ai-gh-account-router` is a tiny local wrapper around GitHub CLI. It lets each local repository declare which logged-in GitHub account should be used for repo-scoped `gh` commands, while leaving global GitHub CLI commands untouched.
 
-## Problem
+It is designed for AI/Codex/Claude/Cursor/OpenClaw-style agents that operate real repositories and should not accidentally use the wrong GitHub identity.
 
-GitHub CLI supports multiple logged-in accounts for the same host, but it still has an active account. When AI agents operate multiple repositories, relying on the active account can accidentally use the wrong GitHub identity.
+---
 
-This tool lets each local repository declare its intended GitHub account using a local-only tag file:
+## The problem
+
+GitHub CLI can keep multiple accounts logged in for the same host, but normal `gh` behavior still depends on a current active/default account. That is fine for a human, but risky for an agent:
+
+- one machine may have personal, work, client, and bot GitHub accounts
+- repo owners may not match the account that should operate the repo
+- agents often run `gh pr`, `gh issue`, and `gh api` without knowing your active account
+- switching accounts globally with `gh auth switch` is easy to forget and unsafe for automation
+
+This tool solves that with a local-only per-repo tag:
 
 ```text
 .ai-gh-account
 ```
 
-The tag file is ignored through:
+Example:
 
 ```text
-.git/info/exclude
+LukeJiaoR
 ```
 
-No token is written to the repository.
+The tag file is ignored through `.git/info/exclude`, so it does not pollute the repository and never gets committed.
 
-## Behavior
+---
 
-After installation, `gh` itself becomes a narrow wrapper.
+## How it works
 
-If the current repository has `.ai-gh-account`, selected repo-oriented commands use that account's token:
+After installation, your shell resolves `gh` to:
+
+```text
+~/.local/bin/gh
+```
+
+That wrapper reads the current repository's `.ai-gh-account` file only for a narrow allowlist of repo-oriented commands.
+
+If the tag exists, it fetches that account's token from the real GitHub CLI:
+
+```bash
+gh auth token --user <account>
+```
+
+Then it executes the real `gh` with `GH_TOKEN` set only for that command.
+
+If the tag is missing, or the command is global/non-routed, it falls back to normal `gh` behavior.
+
+---
+
+## Routed commands
+
+These commands use `.ai-gh-account` when the file exists:
 
 ```bash
 gh pr ...
@@ -41,9 +72,13 @@ gh variable ...
 gh label ...
 ```
 
-If `.ai-gh-account` is missing, the wrapper falls back to normal `gh` behavior.
+These are the commands agents commonly use to manage PRs, issues, Actions, releases, and repo-level metadata.
 
-All other commands always go directly to the original GitHub CLI:
+---
+
+## Non-routed commands
+
+Everything else goes directly to the original GitHub CLI, including:
 
 ```bash
 gh auth ...
@@ -61,15 +96,19 @@ gh help
 gh version
 ```
 
-This is intentional. Commands like `gh auth`, `gh config`, `gh repo clone`, `gh repo create`, and `gh repo fork` are global or bootstrap operations and should not inherit the current repository's account tag.
+This is intentional. Commands like `gh auth`, `gh config`, `gh repo clone`, `gh repo create`, and `gh repo fork` are global/bootstrap operations and should not inherit the current repo's account tag.
+
+---
 
 ## Install
 
 ```bash
+git clone https://github.com/LukeJiaoR/ai-gh-account-router.git
+cd ai-gh-account-router
 ./install.sh
 ```
 
-Then restart your shell or run:
+Restart your shell or run:
 
 ```bash
 source ~/.zshrc
@@ -89,6 +128,14 @@ Expected first result:
 /Users/you/.local/bin/gh
 ```
 
+The original GitHub CLI path is stored at:
+
+```text
+~/.config/ai-gh/real-gh-path
+```
+
+---
+
 ## Per-repository setup
 
 Inside a repository:
@@ -97,27 +144,73 @@ Inside a repository:
 ai-gh-init
 ```
 
-This lists currently logged-in GitHub CLI accounts and lets you choose one.
+You will be asked to choose from currently logged-in GitHub CLI accounts.
 
-Or set it explicitly:
+You can also set it directly:
 
 ```bash
 ai-gh-init LukeJiaoR
 ai-gh-init ranjugao
-ai-gh-init lukejiaosh-svg
+ai-gh-init your-bot-account
 ```
 
-Inspect the current repository tag:
+Inspect the current repo tag:
 
 ```bash
 gh ai-account
 ```
 
-Test the routed identity:
+Test routed identity:
 
 ```bash
 gh api user --jq .login
 ```
+
+---
+
+## Agent usage
+
+Once installed, agents do **not** need a special command.
+
+They should simply use normal `gh` commands:
+
+```bash
+gh pr list
+gh issue list
+gh pr view 123
+gh pr merge 123
+```
+
+If the repo has `.ai-gh-account`, the wrapper selects the tagged account. If not, `gh` behaves normally.
+
+---
+
+## Portable agent instructions
+
+This repo includes portable agent instructions under:
+
+```text
+agent-instructions/
+```
+
+Templates:
+
+```text
+agent-instructions/SKILL.md     # portable SKILL.md-style instruction
+agent-instructions/CODEX.md     # Codex-oriented copy
+agent-instructions/CLAUDE.md    # Claude-oriented copy
+agent-instructions/CURSOR.md    # Cursor-oriented copy
+agent-instructions/OPENCLAW.md  # OpenClaw-style copy
+agent-instructions/AGENTS.md    # generic repo-agent copy
+```
+
+The important rule is the same for every agent:
+
+> Use `gh` normally. Do not use `gh auth switch`. Do not infer account from repo owner. Let the local wrapper route repo-scoped commands.
+
+Many modern agent systems use a folder with a `SKILL.md` file as a portable instruction bundle; this repository keeps the instruction text narrow, explicit, and local-environment-focused so it can be copied into Codex, Claude, OpenClaw, Cursor rules, or a repo-level `AGENTS.md` without changing the wrapper itself.
+
+---
 
 ## Bypass
 
@@ -127,17 +220,45 @@ Temporarily bypass the wrapper:
 GH_AI_BYPASS=1 gh auth status
 ```
 
+---
+
 ## Uninstall
 
 ```bash
 ./uninstall.sh
+hash -r
 ```
 
-## Notes
+This removes:
 
-This only controls GitHub CLI commands.
+```text
+~/.local/bin/gh
+~/.local/bin/ai-gh-init
+```
 
-It does not fully control:
+It does not delete your original GitHub CLI.
+
+---
+
+## Security model
+
+This tool intentionally has a small surface area:
+
+- no tokens are written to repositories
+- `.ai-gh-account` contains only an account name
+- `.ai-gh-account` is ignored through `.git/info/exclude`
+- the wrapper uses a narrow allowlist of routed commands
+- global/bootstrap commands fall back to real `gh`
+- invalid or empty account tags fail closed
+- agents do not need to know or handle raw tokens
+
+---
+
+## What this does not solve
+
+This controls GitHub CLI authentication for `gh` commands.
+
+It does **not** fully control:
 
 ```bash
 git push
@@ -145,16 +266,10 @@ git fetch
 git pull
 ```
 
-Those use Git's own authentication path. For multiple GitHub accounts, prefer repo-specific SSH aliases or explicit Git credential configuration.
+Those use Git's own authentication path. For multi-account Git operations, prefer repo-specific SSH aliases or explicit Git credential configuration.
 
-## AI / Codex usage
+---
 
-AI agents can simply use normal `gh` commands.
+## License
 
-They do not need to know account-routing details. The wrapper handles account selection when `.ai-gh-account` exists.
-
-A Codex skill is included in:
-
-```text
-skills/github-ai-account/SKILL.md
-```
+MIT
