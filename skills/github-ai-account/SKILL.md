@@ -1,4 +1,11 @@
-# GitHub AI Account Routing
+---
+name: GitHub Account Router
+description: Use when operating GitHub repositories with `gh` on a machine that may have multiple logged-in GitHub accounts. Agents should use normal `gh` commands and let the local ai-gh-account-router wrapper select the repo-scoped account from `.ai-gh-account`.
+---
+
+# GitHub Account Router
+
+This is the installable/bundled copy of the portable skill in `agent-instructions/SKILL.md`.
 
 Use this skill when working with GitHub repositories through GitHub CLI on this machine.
 
@@ -6,13 +13,11 @@ Use this skill when working with GitHub repositories through GitHub CLI on this 
 
 Use `gh` normally.
 
-This machine may have a local `gh` wrapper. The wrapper only routes a narrow allowlist of repository-oriented GitHub CLI commands through the repository's `.ai-gh-account` tag.
+Do **not** use `gh auth switch`.
 
-Do not use `gh auth switch`.
+Do **not** write tokens into the repository.
 
-Do not write tokens into the repository.
-
-Do not infer the GitHub account from repo owner.
+Do **not** infer the GitHub account from repo owner.
 
 Repo owner may not equal the GitHub login account.
 
@@ -37,7 +42,7 @@ ranjugao
 ```
 
 ```text
-lukejiaosh-svg
+your-bot-account
 ```
 
 The file must be ignored locally through:
@@ -50,20 +55,18 @@ Do not commit `.ai-gh-account`.
 
 ## Initialization
 
-If `.ai-gh-account` is missing and GitHub operations need a specific account, run:
+If `.ai-gh-account` is missing and GitHub operations need a specific account, ask the user which logged-in GitHub account should operate this repository, then run:
 
 ```bash
 ai-gh-init
 ```
 
-This lists currently logged-in GitHub CLI accounts and asks the user to choose one.
+The command lists currently logged-in GitHub CLI accounts and asks the user to choose one.
 
-Explicit initialization is also allowed:
+If the user already provided the account name, explicit initialization is allowed:
 
 ```bash
-ai-gh-init LukeJiaoR
-ai-gh-init ranjugao
-ai-gh-init lukejiaosh-svg
+ai-gh-init <github-account-name>
 ```
 
 ## Routed commands
@@ -115,6 +118,12 @@ Check the current repo's AI GitHub account tag:
 
 ```bash
 gh ai-account
+```
+
+Test the routed identity:
+
+```bash
+gh api user --jq .login
 ```
 
 Bypass the wrapper temporarily:
