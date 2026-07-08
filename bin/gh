@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+REAL_PATH_FILE="$HOME/.config/ai-gh/real-gh-path"
+
+if [ ! -f "$REAL_PATH_FILE" ]; then
+  echo "gh wrapper: missing $REAL_PATH_FILE" >&2
+  exit 127
+fi
+
+GH_REAL="$(cat "$REAL_PATH_FILE")"
+
+if [ ! -x "$GH_REAL" ]; then
+  echo "gh wrapper: real gh not executable: $GH_REAL" >&2
+  exit 127
+fi
+
+if [ "${GH_AI_BYPASS:-}" = "1" ]; then
+  exec "$GH_REAL" "$@"
+fi
+
+cmd="${1:-}"
+
+# Local diagnostic command.
+if [ "$cmd" = "ai-account" ] || [ "$cmd" = "ai-status" ]; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    root="$(git rev-parse --show-toplevel)"
+    account_file="$root/.ai-gh-account"
+
+    echo "repo: $root"
+
+    if [ -f "$account_file" ]; then
+      echo "tag:  $(cat "$account_file" | tr -d '[:space:]')"
+      echo "file: $account_file"
+    else
+      echo "tag:  missing"
+      echo "file: $account_file"
+    fi
+  else
+    echo "repo: not inside git repo"
+    echo "tag:  unavailable"
+  fi
+
+  echo "real: $GH_REAL"
+  exit 0
+fi
+
+# Narrow allowlist. Only these repo-oriented commands use .ai-gh-account.
+case "$cmd" in
+  pr|issue|run|workflow|release|project|api|secret|variable|label)
+    ;;
+  *)
+    exec "$GH_REAL" "$@"
+    ;;
+esac
+
+# Outside git repo: normal gh behavior.
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  exec "$GH_REAL" "$@"
+fi
+
+root="$(git rev-parse --show-toplevel)"
+account_file="$root/.ai-gh-account"
+
+# No local account tag: normal gh behavior.
+if [ ! -f "$account_file" ]; then
+  exec "$GH_REAL" "$@"
+fi
+
+user="$(cat "$account_file" | tr -d '[:space:]')"
+
+if [ -z "$user" ]; then
+  echo "gh wrapper: empty account tag: $account_file" >&2
+  exit 2
+fi
+
+token="$("$GH_REAL" auth token --user "$user" 2>/dev/null || true)"
+
+if [ -z "$token" ]; then
+  echo "gh wrapper: cannot get token for account '$user'" >&2
+  echo "Run: gh auth login" >&2
+  exit 2
+fi
+
+export GH_TOKEN="$token"
+export GH_PROMPT_DISABLED=1
+
+exec "$GH_REAL" "$@"
