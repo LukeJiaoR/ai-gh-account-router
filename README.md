@@ -70,9 +70,12 @@ gh api ...
 gh secret ...
 gh variable ...
 gh label ...
+gh repo sync ...
 ```
 
 These are the commands agents commonly use to manage PRs, issues, Actions, releases, and repo-level metadata.
+
+`gh repo sync` is the only routed `gh repo` subcommand. Other `gh repo ...` commands still bypass routing because they are usually global/bootstrap operations.
 
 ---
 
@@ -83,7 +86,10 @@ Everything else goes directly to the original GitHub CLI, including:
 ```bash
 gh auth ...
 gh config ...
-gh repo ...
+gh repo clone ...
+gh repo create ...
+gh repo fork ...
+gh repo view ...
 gh extension ...
 gh alias ...
 gh gist ...
@@ -97,6 +103,33 @@ gh version
 ```
 
 This is intentional. Commands like `gh auth`, `gh config`, `gh repo clone`, `gh repo create`, and `gh repo fork` are global/bootstrap operations and should not inherit the current repo's account tag.
+
+---
+
+## `git pull` and `gh repo sync`
+
+This tool does not route `git pull`, because `git` uses Git's own authentication path rather than GitHub CLI's `GH_TOKEN` path.
+
+For agent workflows that need a GitHub CLI-native sync command, use:
+
+```bash
+gh repo sync
+```
+
+Useful examples:
+
+```bash
+# Sync the current local repository from its remote parent/default source
+gh repo sync
+
+# Sync a specific branch
+gh repo sync --branch dev
+
+# Sync from an explicit source repository
+gh repo sync --source owner/repo --branch main
+```
+
+Important difference: `gh repo sync` is not a full replacement for `git pull`. It syncs a destination repository/branch from a source repository/branch. It is useful for simple fast-forward-style repository syncs, but normal Git workflows with local merge/rebase behavior should still use `git pull` or `git fetch`.
 
 ---
 
@@ -234,6 +267,7 @@ gh pr list
 gh issue list
 gh pr view 123
 gh pr merge 123
+gh repo sync --branch dev
 ```
 
 If the repo has `.ai-gh-account`, the wrapper selects the tagged account. If not, `gh` behaves normally.
