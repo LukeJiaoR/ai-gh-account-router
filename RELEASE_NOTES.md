@@ -1,5 +1,14 @@
 # Release Notes
 
+## 0.5.0
+
+GitHub CLI sync support.
+
+- `gh repo sync` now uses `.ai-gh-account` routing.
+- Other `gh repo ...` subcommands still bypass routing.
+- README now documents `gh repo sync` as the closest GitHub CLI-native alternative for simple sync workflows.
+- Clarified that `git pull` is still controlled by Git's own authentication path and is not fully replaceable by `gh`.
+
 ## 0.4.0
 
 Installer safety refresh.
