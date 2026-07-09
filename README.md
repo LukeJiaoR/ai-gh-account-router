@@ -108,6 +108,35 @@ cd ai-gh-account-router
 ./install.sh
 ```
 
+The wrapper and `ai-gh-init` are always installed to:
+
+```text
+~/.local/bin/gh
+~/.local/bin/ai-gh-init
+```
+
+The agent skill install is interactive. The installer shows known agent skill roots and asks where to install `SKILL.md`.
+
+Missing agent directories are **not** created unless you explicitly choose them.
+
+Interactive options:
+
+```text
+1) Install to existing agent roots only
+2) Choose agents manually (creates selected missing roots)
+3) Skip skill install
+4) Install to all known roots (creates missing roots)
+```
+
+Known local skill roots:
+
+```text
+~/.agent-skills/github-ai-account/SKILL.md
+~/.codex/skills/github-ai-account/SKILL.md
+~/.claude/skills/github-ai-account/SKILL.md
+~/.agy/skills/github-ai-account/SKILL.md
+```
+
 Restart your shell or run:
 
 ```bash
@@ -134,16 +163,31 @@ The original GitHub CLI path is stored at:
 ~/.config/ai-gh/real-gh-path
 ```
 
-The installer also copies the portable agent skill to common local discovery locations:
+---
 
-```text
-~/.agent-skills/github-ai-account/SKILL.md
-~/.codex/skills/github-ai-account/SKILL.md
-~/.claude/skills/github-ai-account/SKILL.md
-~/.agy/skills/github-ai-account/SKILL.md
+## Non-interactive install
+
+For bootstrap scripts or CI-like setup, control skill installation with `AI_GH_INSTALL_SKILLS`:
+
+```bash
+AI_GH_INSTALL_SKILLS=none ./install.sh
+AI_GH_INSTALL_SKILLS=existing ./install.sh
+AI_GH_INSTALL_SKILLS=all ./install.sh
+AI_GH_INSTALL_SKILLS=codex,claude,agy ./install.sh
 ```
 
-Agents that can discover any of these folders can load the routing rule automatically. If an agent uses a different skill directory, copy `agent-instructions/SKILL.md` there.
+Modes:
+
+```text
+none      skip skill install
+existing  install only to existing known skill roots; do not create missing roots
+all       install to all known roots; create missing roots
+list      comma-separated ids: generic,codex,claude,agy
+```
+
+When stdin is not interactive and `AI_GH_INSTALL_SKILLS` is unset, the installer uses `existing` mode.
+
+If an agent uses a different skill directory, copy `agent-instructions/SKILL.md` there manually.
 
 ---
 
@@ -266,6 +310,7 @@ This tool intentionally has a small surface area:
 - global/bootstrap commands fall back to real `gh`
 - invalid or empty account tags fail closed
 - agents do not need to know or handle raw tokens
+- missing agent skill directories are not created unless the user explicitly chooses them
 
 ---
 
