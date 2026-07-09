@@ -4,7 +4,7 @@
 
 `ai-gh-account-router` is a tiny local wrapper around GitHub CLI. It lets each local repository declare which logged-in GitHub account should be used for repo-scoped `gh` commands, while leaving global GitHub CLI commands untouched.
 
-It is designed for AI/Codex/Claude/Cursor/OpenClaw-style agents that operate real repositories and should not accidentally use the wrong GitHub identity.
+It is designed for AI/Codex/Claude/Cursor/OpenClaw/AGY-style agents that operate real repositories and should not accidentally use the wrong GitHub identity.
 
 ---
 
@@ -134,6 +134,17 @@ The original GitHub CLI path is stored at:
 ~/.config/ai-gh/real-gh-path
 ```
 
+The installer also copies the portable agent skill to common local discovery locations:
+
+```text
+~/.agent-skills/github-ai-account/SKILL.md
+~/.codex/skills/github-ai-account/SKILL.md
+~/.claude/skills/github-ai-account/SKILL.md
+~/.agy/skills/github-ai-account/SKILL.md
+```
+
+Agents that can discover any of these folders can load the routing rule automatically. If an agent uses a different skill directory, copy `agent-instructions/SKILL.md` there.
+
 ---
 
 ## Per-repository setup
@@ -208,7 +219,7 @@ The important rule is the same for every agent:
 
 > Use `gh` normally. Do not use `gh auth switch`. Do not infer account from repo owner. Let the local wrapper route repo-scoped commands.
 
-Many modern agent systems use a folder with a `SKILL.md` file as a portable instruction bundle; this repository keeps the instruction text narrow, explicit, and local-environment-focused so it can be copied into Codex, Claude, OpenClaw, Cursor rules, or a repo-level `AGENTS.md` without changing the wrapper itself.
+Many modern agent systems use a folder with a `SKILL.md` file as a portable instruction bundle; this repository keeps the instruction text narrow, explicit, and local-environment-focused so it can be copied into Codex, Claude, OpenClaw, Cursor rules, AGY skills, or a repo-level `AGENTS.md` without changing the wrapper itself.
 
 ---
 
@@ -234,6 +245,10 @@ This removes:
 ```text
 ~/.local/bin/gh
 ~/.local/bin/ai-gh-init
+~/.agent-skills/github-ai-account/SKILL.md
+~/.codex/skills/github-ai-account/SKILL.md
+~/.claude/skills/github-ai-account/SKILL.md
+~/.agy/skills/github-ai-account/SKILL.md
 ```
 
 It does not delete your original GitHub CLI.
