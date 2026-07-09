@@ -20,6 +20,7 @@ if [ "${GH_AI_BYPASS:-}" = "1" ]; then
 fi
 
 cmd="${1:-}"
+subcmd="${2:-}"
 
 # Local diagnostic command.
 if [ "$cmd" = "ai-account" ] || [ "$cmd" = "ai-status" ]; then
@@ -46,8 +47,15 @@ if [ "$cmd" = "ai-account" ] || [ "$cmd" = "ai-status" ]; then
 fi
 
 # Narrow allowlist. Only these repo-oriented commands use .ai-gh-account.
+# Most `gh repo ...` commands are global/bootstrap operations and bypass routing.
+# `gh repo sync` is intentionally allowed as a safer `gh`-native sync option.
 case "$cmd" in
   pr|issue|run|workflow|release|project|api|secret|variable|label)
+    ;;
+  repo)
+    if [ "$subcmd" != "sync" ]; then
+      exec "$GH_REAL" "$@"
+    fi
     ;;
   *)
     exec "$GH_REAL" "$@"
