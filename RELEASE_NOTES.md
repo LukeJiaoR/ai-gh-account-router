@@ -1,5 +1,15 @@
 # Release Notes
 
+## 0.4.0
+
+Installer safety refresh.
+
+- `install.sh` now asks where to install agent skills in interactive shells.
+- Missing agent skill directories are no longer created by default.
+- Non-interactive installs default to `AI_GH_INSTALL_SKILLS=existing` behavior.
+- Added `AI_GH_INSTALL_SKILLS` modes: `none`, `existing`, `all`, and comma-separated ids such as `codex,claude,agy`.
+- README now documents interactive and non-interactive skill installation behavior.
+
 ## 0.3.0
 
 Installer refresh for local agent skill discovery.
