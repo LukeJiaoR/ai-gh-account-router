@@ -1,5 +1,15 @@
 # Release Notes
 
+## 0.3.0
+
+Installer refresh for local agent skill discovery.
+
+- `install.sh` now copies portable `SKILL.md` into common local agent discovery paths.
+- Added generic `~/.agent-skills/github-ai-account/SKILL.md` install target.
+- Added Codex, Claude, and AGY local skill install targets.
+- `uninstall.sh` now removes the installed skill copies.
+- README now documents installed skill locations and AGY usage.
+
 ## 0.2.0
 
 Documentation and agent-instruction refresh.
