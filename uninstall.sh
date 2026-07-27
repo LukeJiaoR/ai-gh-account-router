@@ -2,23 +2,22 @@
 set -euo pipefail
 
 rm -f "$HOME/.local/bin/gh" "$HOME/.local/bin/ai-gh-init"
-rm -f "$HOME/.agent-skills/github-ai-account/SKILL.md"
-rm -f "$HOME/.codex/skills/github-ai-account/SKILL.md"
-rm -f "$HOME/.claude/skills/github-ai-account/SKILL.md"
-rm -f "$HOME/.agy/skills/github-ai-account/SKILL.md"
+skill_roots=("$HOME/.agent-skills" "$HOME/.codex/skills" "$HOME/.claude/skills" "$HOME/.agy/skills")
 
-rmdir "$HOME/.agent-skills/github-ai-account" 2>/dev/null || true
-rmdir "$HOME/.codex/skills/github-ai-account" 2>/dev/null || true
-rmdir "$HOME/.claude/skills/github-ai-account" 2>/dev/null || true
-rmdir "$HOME/.agy/skills/github-ai-account" 2>/dev/null || true
+for root in "${skill_roots[@]}"; do
+  rm -f "$root/github-account-router/SKILL.md"
+  rm -f "$root/github-ai-account/SKILL.md"
+  rmdir "$root/github-account-router" 2>/dev/null || true
+  rmdir "$root/github-ai-account" 2>/dev/null || true
+done
 
 echo "Removed:"
 echo "  $HOME/.local/bin/gh"
 echo "  $HOME/.local/bin/ai-gh-init"
-echo "  $HOME/.agent-skills/github-ai-account/SKILL.md"
-echo "  $HOME/.codex/skills/github-ai-account/SKILL.md"
-echo "  $HOME/.claude/skills/github-ai-account/SKILL.md"
-echo "  $HOME/.agy/skills/github-ai-account/SKILL.md"
+for root in "${skill_roots[@]}"; do
+  echo "  $root/github-account-router/SKILL.md"
+  echo "  $root/github-ai-account/SKILL.md (legacy)"
+done
 echo
 echo "Kept config:"
 echo "  $HOME/.config/ai-gh/real-gh-path"

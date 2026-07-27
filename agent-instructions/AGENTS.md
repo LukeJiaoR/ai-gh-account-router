@@ -12,7 +12,7 @@ Agents should use normal `gh` commands:
 gh pr list
 gh issue list
 gh pr view 123
-gh pr merge 123
+gh pr checks 123
 ```
 
 Do not use `gh auth switch`.
@@ -22,6 +22,10 @@ Do not infer the GitHub account from the repo owner.
 Do not commit `.ai-gh-account`.
 
 Do not write tokens into repository files.
+
+When the agent runtime restricts network or credential access, run `gh auth status` and each authenticated `gh` command directly through its approved host/external execution mechanism. Keep approvals narrow and do not hide `gh` in a shell wrapper or pipeline.
+
+Execution approval does not authorize GitHub writes. Before an explicitly requested mutation, compare `gh api user --jq .login` with `.ai-gh-account` and verify the target with `gh api repos/OWNER/REPO --jq .full_name`. Stop if host authentication or either check fails.
 
 When identity matters, check:
 

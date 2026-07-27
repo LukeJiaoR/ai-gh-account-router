@@ -89,10 +89,16 @@ append_installed_skill() {
 
 install_skill_to_root() {
   local root="$1"
-  local target_dir="$root/github-ai-account"
+  local target_dir="$root/github-account-router"
+  local legacy_target_dir="$root/github-ai-account"
 
   mkdir -p "$target_dir"
   install -m 0644 "$skill_source" "$target_dir/SKILL.md"
+
+  # Prevent duplicate discovery after upgrading from the former skill name.
+  rm -f "$legacy_target_dir/SKILL.md"
+  rmdir "$legacy_target_dir" 2>/dev/null || true
+
   append_installed_skill "$target_dir/SKILL.md"
 }
 

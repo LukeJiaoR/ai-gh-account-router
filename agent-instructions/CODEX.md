@@ -30,7 +30,9 @@ The file contains the GitHub account name to use for that repo.
 
 ## Before GitHub work
 
-Run:
+Run `gh auth status` directly with `sandbox_permissions: "require_escalated"` so host network and Keychain credentials are available. Run each authenticated `gh` command the same way, with a scoped `justification` and optional narrow `prefix_rule`. Do not wrap `gh` in a shell, script, or pipeline.
+
+Then check:
 
 ```bash
 gh ai-account
@@ -50,9 +52,11 @@ when interactive setup is acceptable.
 gh pr list
 gh issue list
 gh pr view 123
-gh pr merge 123
+gh pr checks 123
 gh api user --jq .login
 ```
+
+Execution approval through the sandbox grants capability, not authority for GitHub writes. Before an explicitly requested mutation, compare `gh api user --jq .login` with `.ai-gh-account` and verify the routed target with `gh api repos/OWNER/REPO --jq .full_name`. Stop if host authentication or either check fails.
 
 ## Do not route global setup
 
@@ -61,7 +65,10 @@ These commands intentionally bypass account routing:
 ```bash
 gh auth ...
 gh config ...
-gh repo ...
+gh repo clone ...
+gh repo create ...
+gh repo fork ...
+gh repo view ...
 ```
 
-Do not use them to switch active accounts during repo work.
+`gh repo sync` is the only routed `gh repo` subcommand. Do not use global commands to switch active accounts during repo work.

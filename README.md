@@ -164,11 +164,13 @@ Interactive options:
 Known local skill roots:
 
 ```text
-~/.agent-skills/github-ai-account/SKILL.md
-~/.codex/skills/github-ai-account/SKILL.md
-~/.claude/skills/github-ai-account/SKILL.md
-~/.agy/skills/github-ai-account/SKILL.md
+~/.agent-skills/github-account-router/SKILL.md
+~/.codex/skills/github-account-router/SKILL.md
+~/.claude/skills/github-account-router/SKILL.md
+~/.agy/skills/github-account-router/SKILL.md
 ```
+
+Upgrades remove the legacy `github-ai-account/SKILL.md` copy so agents do not discover duplicate router skills.
 
 Restart your shell or run:
 
@@ -266,11 +268,13 @@ They should simply use normal `gh` commands:
 gh pr list
 gh issue list
 gh pr view 123
-gh pr merge 123
+gh pr checks 123
 gh repo sync --branch dev
 ```
 
 If the repo has `.ai-gh-account`, the wrapper selects the tagged account. If not, `gh` behaves normally.
+
+`GitHub Account Router` is the single agent-skill entry point for these commands. In agent runtimes that sandbox network access or macOS Keychain credentials, the skill also instructs the agent to run authenticated `gh` commands through the runtime's approved host/external execution mechanism. That execution approval does not authorize GitHub-side writes; mutations still require explicit user direction.
 
 ---
 
@@ -286,18 +290,18 @@ Templates:
 
 ```text
 agent-instructions/SKILL.md     # portable SKILL.md-style instruction
-agent-instructions/CODEX.md     # Codex-oriented copy
-agent-instructions/CLAUDE.md    # Claude-oriented copy
-agent-instructions/CURSOR.md    # Cursor-oriented copy
-agent-instructions/OPENCLAW.md  # OpenClaw-style copy
-agent-instructions/AGENTS.md    # generic repo-agent copy
+agent-instructions/CODEX.md     # Codex-oriented fallback snippet
+agent-instructions/CLAUDE.md    # Claude-oriented fallback snippet
+agent-instructions/CURSOR.md    # Cursor-oriented fallback snippet
+agent-instructions/OPENCLAW.md  # OpenClaw-style fallback snippet
+agent-instructions/AGENTS.md    # generic repo-agent fallback snippet
 ```
 
 The important rule is the same for every agent:
 
-> Use `gh` normally. Do not use `gh auth switch`. Do not infer account from repo owner. Let the local wrapper route repo-scoped commands.
+> Use `gh` normally. Do not use `gh auth switch`. Do not infer account from repo owner. Let the local wrapper route repo-scoped commands, and use approved host execution when the runtime restricts network or credential access.
 
-Many modern agent systems use a folder with a `SKILL.md` file as a portable instruction bundle; this repository keeps the instruction text narrow, explicit, and local-environment-focused so it can be copied into Codex, Claude, OpenClaw, Cursor rules, AGY skills, or a repo-level `AGENTS.md` without changing the wrapper itself.
+`agent-instructions/SKILL.md` is the canonical agent contract and the single skill entry point. The runtime-specific files are fallback snippets for systems that cannot discover skills; they retain the same host-execution, identity-verification, and write-authorization boundaries.
 
 ---
 
@@ -323,10 +327,10 @@ This removes:
 ```text
 ~/.local/bin/gh
 ~/.local/bin/ai-gh-init
-~/.agent-skills/github-ai-account/SKILL.md
-~/.codex/skills/github-ai-account/SKILL.md
-~/.claude/skills/github-ai-account/SKILL.md
-~/.agy/skills/github-ai-account/SKILL.md
+~/.agent-skills/github-account-router/SKILL.md
+~/.codex/skills/github-account-router/SKILL.md
+~/.claude/skills/github-account-router/SKILL.md
+~/.agy/skills/github-account-router/SKILL.md
 ```
 
 It does not delete your original GitHub CLI.

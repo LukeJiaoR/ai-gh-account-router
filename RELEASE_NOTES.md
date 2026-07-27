@@ -1,5 +1,18 @@
 # Release Notes
 
+## Unreleased
+
+Unified GitHub CLI agent guidance.
+
+- Expanded `GitHub Account Router` into the single skill entry point for routed `gh` commands and sandboxed host execution.
+- Added explicit guidance for network and macOS Keychain access in restricted agent runtimes, including Codex-style scoped escalation.
+- Clarified that sandbox approval grants execution capability but never authorizes GitHub-side writes.
+- Added required target and routed-identity checks before mutations.
+- Renamed the skill frontmatter identifier to the specification-compliant `github-account-router`.
+- Renamed bundled and installed skill directories to `github-account-router` and added legacy-copy cleanup during upgrades.
+- Synchronized the portable and bundled skill copies.
+- Updated runtime-specific fallback templates with the same host-execution and write-safety contract.
+
 ## 0.5.0
 
 GitHub CLI sync support.
