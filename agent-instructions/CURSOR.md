@@ -10,7 +10,7 @@ Use normal `gh` commands.
 gh pr list
 gh issue list
 gh pr view 123
-gh pr merge 123
+gh pr checks 123
 ```
 
 The local `gh` wrapper chooses the correct GitHub account for repo-scoped commands when `.ai-gh-account` exists at the repository root.
@@ -28,6 +28,8 @@ Do not infer account identity from the repository owner.
 Do not commit `.ai-gh-account`.
 
 Do not store tokens in project files.
+
+When the runtime restricts network or credential access, run `gh auth status` and authenticated `gh` commands directly through its approved host/external execution mechanism. Keep approvals narrow; execution approval never authorizes a GitHub write.
 
 ## Setup
 
@@ -56,3 +58,5 @@ gh api user --jq .login
 ```
 
 This should print the account from `.ai-gh-account` when the repo is tagged.
+
+Before an explicitly requested mutation, compare the login with `.ai-gh-account` and verify the routed target with `gh api repos/OWNER/REPO --jq .full_name`. Stop if host authentication or either check fails.

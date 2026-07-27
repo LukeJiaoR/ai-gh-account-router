@@ -10,7 +10,7 @@ Use normal GitHub CLI commands:
 gh pr list
 gh issue list
 gh pr view 123
-gh pr merge 123
+gh pr checks 123
 ```
 
 The local `gh` command may be wrapped by `ai-gh-account-router`. If the repository has `.ai-gh-account`, routed repo-scoped commands automatically use the tagged GitHub account.
@@ -28,6 +28,8 @@ Do not infer account from the repo owner.
 Do not write tokens to disk.
 
 Do not commit `.ai-gh-account`.
+
+When the runtime restricts network or credential access, run `gh auth status` and authenticated `gh` commands directly through its approved host/external execution mechanism. Never treat execution approval as authorization for a GitHub write.
 
 ## Setup check
 
@@ -56,6 +58,8 @@ To confirm routed identity:
 ```bash
 gh api user --jq .login
 ```
+
+Before an explicitly requested mutation, compare that login with `.ai-gh-account` and verify the routed target with `gh api repos/OWNER/REPO --jq .full_name`. Stop if host authentication or either check fails.
 
 To inspect normal GitHub CLI auth without routing:
 

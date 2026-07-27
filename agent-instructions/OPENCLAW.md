@@ -48,6 +48,8 @@ Do not commit `.ai-gh-account`.
 
 Do not write tokens to the repository.
 
+When the runtime restricts network or credential access, run `gh auth status` and authenticated `gh` commands directly through its approved host/external execution mechanism. Keep approvals narrow and do not hide `gh` in shell wrappers or pipelines. Execution approval never authorizes GitHub writes.
+
 ## Setup and diagnosis
 
 Check current tag:
@@ -67,6 +69,8 @@ Verify routed account:
 ```bash
 gh api user --jq .login
 ```
+
+Before an explicitly requested mutation, compare that login with `.ai-gh-account` and verify the routed target with `gh api repos/OWNER/REPO --jq .full_name`. Stop if host authentication or either check fails.
 
 Bypass wrapper for global auth inspection:
 
