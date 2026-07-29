@@ -50,6 +50,8 @@ Do not write tokens to the repository.
 
 When the runtime restricts network or credential access, run `gh auth status` and authenticated `gh` commands directly through its approved host/external execution mechanism. Keep approvals narrow and do not hide `gh` in shell wrappers or pipelines. Execution approval never authorizes GitHub writes.
 
+If the wrapper exits `77` with `GH_EXTERNAL_EXECUTION_REQUIRED`, retry the same `gh` operation through approved external execution. Do not bypass the guard. It does not cover `git` commands or Git metadata writes.
+
 ## Setup and diagnosis
 
 Check current tag:

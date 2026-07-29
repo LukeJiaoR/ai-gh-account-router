@@ -12,6 +12,8 @@ Unified GitHub CLI agent guidance.
 - Renamed bundled and installed skill directories to `github-account-router` and added legacy-copy cleanup during upgrades.
 - Synchronized the portable and bundled skill copies.
 - Updated runtime-specific fallback templates with the same host-execution and write-safety contract.
+- Added deterministic Codex seatbelt detection: non-local `gh` commands now fail before network or Keychain access with exit `77` and `GH_EXTERNAL_EXECUTION_REQUIRED`.
+- Kept local help, version, and router diagnostics available inside the sandbox, and documented that Git metadata writes remain outside router scope.
 
 ## 0.5.0
 

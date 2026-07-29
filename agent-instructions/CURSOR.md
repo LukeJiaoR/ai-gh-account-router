@@ -31,6 +31,8 @@ Do not store tokens in project files.
 
 When the runtime restricts network or credential access, run `gh auth status` and authenticated `gh` commands directly through its approved host/external execution mechanism. Keep approvals narrow; execution approval never authorizes a GitHub write.
 
+If the wrapper exits `77` with `GH_EXTERNAL_EXECUTION_REQUIRED`, retry the same `gh` operation through approved external execution. Do not bypass the guard. It does not cover `git` commands or Git metadata writes.
+
 ## Setup
 
 Check the repo's configured account:

@@ -15,12 +15,39 @@ if [ ! -x "$GH_REAL" ]; then
   exit 127
 fi
 
-if [ "${GH_AI_BYPASS:-}" = "1" ]; then
+cmd="${1:-}"
+subcmd="${2:-}"
+local_only=0
+
+case "$cmd" in
+  ""|ai-account|ai-status|version|help|--version|--help)
+    local_only=1
+    ;;
+esac
+
+if [ "$local_only" -eq 0 ]; then
+  for arg in "$@"; do
+    if [ "$arg" = "--help" ]; then
+      local_only=1
+      break
+    fi
+  done
+fi
+
+if [ "${CODEX_SANDBOX:-}" = "seatbelt" ] && [ "$local_only" -eq 0 ]; then
+  echo "GH_EXTERNAL_EXECUTION_REQUIRED" >&2
+  echo "gh wrapper: Codex seatbelt blocks authenticated GitHub access." >&2
+  echo 'gh wrapper: retry this command with sandbox_permissions="require_escalated".' >&2
+  exit 77
+fi
+
+if [ "$local_only" -eq 1 ] && [ "$cmd" != "ai-account" ] && [ "$cmd" != "ai-status" ]; then
   exec "$GH_REAL" "$@"
 fi
 
-cmd="${1:-}"
-subcmd="${2:-}"
+if [ "${GH_AI_BYPASS:-}" = "1" ]; then
+  exec "$GH_REAL" "$@"
+fi
 
 # Local diagnostic command.
 if [ "$cmd" = "ai-account" ] || [ "$cmd" = "ai-status" ]; then

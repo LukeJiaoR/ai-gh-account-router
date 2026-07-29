@@ -23,6 +23,10 @@ for template in AGENTS.md CLAUDE.md CODEX.md CURSOR.md OPENCLAW.md; do
   grep -qi 'execution approval' "$template_path"
   grep -q "gh api user --jq .login" "$template_path"
   grep -q "gh api repos/OWNER/REPO --jq .full_name" "$template_path"
+  grep -q "GH_EXTERNAL_EXECUTION_REQUIRED" "$template_path"
 done
+
+grep -q "GH_EXTERNAL_EXECUTION_REQUIRED" "$portable_skill"
+grep -q "git worktree remove" "$portable_skill"
 
 echo "skill layout checks passed"

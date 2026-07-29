@@ -24,6 +24,8 @@ When the runtime restricts network or credential-store access:
 
 For Codex-style tools, use a direct command with `sandbox_permissions: "require_escalated"`, a scoped `justification`, and an optional narrow `prefix_rule`.
 
+The installed wrapper fails non-local commands inside Codex seatbelt with exit code `77` and the marker `GH_EXTERNAL_EXECUTION_REQUIRED`. Treat that marker as a requirement to retry the same operation through approved external execution. Local `help`, `version`, `ai-account`, and `ai-status` commands remain available. The guard cannot be bypassed with `GH_AI_BYPASS=1`.
+
 If host execution cannot access GitHub or the credential store, stop and report the failure. Do not fall back to sandboxed or unauthenticated execution.
 
 ## Repository account tag
@@ -55,4 +57,4 @@ gh api user --jq .login
 GH_AI_BYPASS=1 gh auth status
 ```
 
-Use bypass only for diagnostics. This router controls `gh`, not `git push`, `git fetch`, or `git pull`; Git uses its own SSH or credential configuration.
+Use bypass only for diagnostics through approved external execution. This router controls `gh`, not any `git` command; sandbox rules still apply to Git metadata writes such as `git worktree remove`, `git worktree prune`, and branch deletion.
