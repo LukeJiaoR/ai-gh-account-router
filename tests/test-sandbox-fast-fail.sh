@@ -17,7 +17,9 @@ cat > "$fake_gh" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 printf 'call' >> "$FAKE_GH_CALLS"
-printf ' <%s>' "$@" >> "$FAKE_GH_CALLS"
+for arg in "$@"; do
+  printf ' <%s>' "$arg" >> "$FAKE_GH_CALLS"
+done
 printf '\n' >> "$FAKE_GH_CALLS"
 if [ "${1:-}" = "auth" ] && [ "${2:-}" = "token" ]; then
   printf 'test-token\n'
