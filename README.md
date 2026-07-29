@@ -276,6 +276,18 @@ If the repo has `.ai-gh-account`, the wrapper selects the tagged account. If not
 
 `GitHub Account Router` is the single agent-skill entry point for these commands. In agent runtimes that sandbox network access or macOS Keychain credentials, the skill also instructs the agent to run authenticated `gh` commands through the runtime's approved host/external execution mechanism. That execution approval does not authorize GitHub-side writes; mutations still require explicit user direction.
 
+### Sandbox fast-fail
+
+Inside Codex seatbelt, network- or credential-dependent commands stop before real `gh` runs:
+
+```text
+GH_EXTERNAL_EXECUTION_REQUIRED
+gh wrapper: Codex seatbelt blocks authenticated GitHub access.
+gh wrapper: retry this command with sandbox_permissions="require_escalated".
+```
+
+The wrapper exits `77`. Retry the same command through approved external execution. Purely local help, version, and router diagnostic commands remain available. This behavior does not govern `git` commands; Git metadata writes may need their own sandbox approval.
+
 ---
 
 ## Portable agent instructions

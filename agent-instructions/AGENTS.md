@@ -25,6 +25,8 @@ Do not write tokens into repository files.
 
 When the agent runtime restricts network or credential access, run `gh auth status` and each authenticated `gh` command directly through its approved host/external execution mechanism. Keep approvals narrow and do not hide `gh` in a shell wrapper or pipeline.
 
+If the wrapper exits `77` with `GH_EXTERNAL_EXECUTION_REQUIRED`, retry the same `gh` operation through approved external execution. Do not bypass the guard. It does not cover `git` commands or Git metadata writes.
+
 Execution approval does not authorize GitHub writes. Before an explicitly requested mutation, compare `gh api user --jq .login` with `.ai-gh-account` and verify the target with `gh api repos/OWNER/REPO --jq .full_name`. Stop if host authentication or either check fails.
 
 When identity matters, check:

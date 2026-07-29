@@ -32,6 +32,8 @@ The file contains the GitHub account name to use for that repo.
 
 Run `gh auth status` directly with `sandbox_permissions: "require_escalated"` so host network and Keychain credentials are available. Run each authenticated `gh` command the same way, with a scoped `justification` and optional narrow `prefix_rule`. Do not wrap `gh` in a shell, script, or pipeline.
 
+If the wrapper exits `77` with `GH_EXTERNAL_EXECUTION_REQUIRED`, retry the same `gh` operation through approved external execution. Do not bypass the guard. It does not cover `git` commands or Git metadata writes.
+
 Then check:
 
 ```bash
