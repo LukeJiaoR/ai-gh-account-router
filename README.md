@@ -1,208 +1,103 @@
 # ai-gh-account-router
 
-> **Make `gh` safe for AI agents on machines with multiple GitHub accounts.**
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-`ai-gh-account-router` is a tiny local wrapper around GitHub CLI. It lets each local repository declare which logged-in GitHub account should be used for repo-scoped `gh` commands, while leaving global GitHub CLI commands untouched.
+A small local wrapper that makes GitHub CLI safer on machines with multiple GitHub accounts.
 
-It is designed for AI/Codex/Claude/Cursor/OpenClaw/AGY-style agents that operate real repositories and should not accidentally use the wrong GitHub identity.
+Each repository can select the account used by repository-scoped `gh` commands without changing GitHub CLI's global active account. The selection stays local and is never committed.
 
----
+## Why use it?
 
-## The problem
+GitHub CLI can store several accounts for the same host, but commands normally use one active account. This is easy to miss in automated or agent-driven workflows and can cause a command to run under the wrong identity.
 
-GitHub CLI can keep multiple accounts logged in for the same host, but normal `gh` behavior still depends on a current active/default account. That is fine for a human, but risky for an agent:
-
-- one machine may have personal, work, client, and bot GitHub accounts
-- repo owners may not match the account that should operate the repo
-- agents often run `gh pr`, `gh issue`, and `gh api` without knowing your active account
-- switching accounts globally with `gh auth switch` is easy to forget and unsafe for automation
-
-This tool solves that with a local-only per-repo tag:
+This wrapper adds a repository-local account tag:
 
 ```text
 .ai-gh-account
 ```
 
-Example:
+The file contains only a GitHub login, for example:
 
 ```text
-LukeJiaoR
+work-account
 ```
 
-The tag file is ignored through `.git/info/exclude`, so it does not pollute the repository and never gets committed.
-
----
+`ai-gh-init` adds the file to `.git/info/exclude`, so the selection remains local to the current clone.
 
 ## How it works
 
-After installation, your shell resolves `gh` to:
+After installation, the shell resolves `gh` to the wrapper in `~/.local/bin`. For supported repository-scoped commands, the wrapper:
+
+1. Finds the current repository's `.ai-gh-account` file.
+2. Requests that account's token from the original GitHub CLI.
+3. Sets `GH_TOKEN` only for the current command.
+4. Runs the original `gh` executable.
+
+If there is no tag, or the command is not routed, normal GitHub CLI behavior is preserved. Empty or invalid tags fail closed.
+
+## Command routing
+
+The following commands use the repository tag when it exists:
 
 ```text
-~/.local/bin/gh
+gh pr          gh issue       gh run          gh workflow
+gh release     gh project     gh api          gh secret
+gh variable    gh label       gh repo sync
 ```
 
-That wrapper reads the current repository's `.ai-gh-account` file only for a narrow allowlist of repo-oriented commands.
+Global and bootstrap commands are not routed, including:
 
-If the tag exists, it fetches that account's token from the real GitHub CLI:
-
-```bash
-gh auth token --user <account>
+```text
+gh auth        gh config      gh repo clone   gh repo create
+gh repo fork   gh repo view   gh extension    gh alias
+gh gist        gh org         gh codespace    gh search
 ```
 
-Then it executes the real `gh` with `GH_TOKEN` set only for that command.
+Only `gh repo sync` is routed within the `gh repo` command group.
 
-If the tag is missing, or the command is global/non-routed, it falls back to normal `gh` behavior.
+## Requirements
 
----
-
-## Routed commands
-
-These commands use `.ai-gh-account` when the file exists:
-
-```bash
-gh pr ...
-gh issue ...
-gh run ...
-gh workflow ...
-gh release ...
-gh project ...
-gh api ...
-gh secret ...
-gh variable ...
-gh label ...
-gh repo sync ...
-```
-
-These are the commands agents commonly use to manage PRs, issues, Actions, releases, and repo-level metadata.
-
-`gh repo sync` is the only routed `gh repo` subcommand. Other `gh repo ...` commands still bypass routing because they are usually global/bootstrap operations.
-
----
-
-## Non-routed commands
-
-Everything else goes directly to the original GitHub CLI, including:
-
-```bash
-gh auth ...
-gh config ...
-gh repo clone ...
-gh repo create ...
-gh repo fork ...
-gh repo view ...
-gh extension ...
-gh alias ...
-gh gist ...
-gh org ...
-gh codespace ...
-gh search ...
-gh ssh-key ...
-gh gpg-key ...
-gh help
-gh version
-```
-
-This is intentional. Commands like `gh auth`, `gh config`, `gh repo clone`, `gh repo create`, and `gh repo fork` are global/bootstrap operations and should not inherit the current repo's account tag.
-
----
-
-## `git pull` and `gh repo sync`
-
-This tool does not route `git pull`, because `git` uses Git's own authentication path rather than GitHub CLI's `GH_TOKEN` path.
-
-For agent workflows that need a GitHub CLI-native sync command, use:
-
-```bash
-gh repo sync
-```
-
-Useful examples:
-
-```bash
-# Sync the current local repository from its remote parent/default source
-gh repo sync
-
-# Sync a specific branch
-gh repo sync --branch dev
-
-# Sync from an explicit source repository
-gh repo sync --source owner/repo --branch main
-```
-
-Important difference: `gh repo sync` is not a full replacement for `git pull`. It syncs a destination repository/branch from a source repository/branch. It is useful for simple fast-forward-style repository syncs, but normal Git workflows with local merge/rebase behavior should still use `git pull` or `git fetch`.
-
----
+- Git
+- GitHub CLI (`gh`)
+- Bash
+- One or more GitHub accounts already authenticated with GitHub CLI
 
 ## Install
 
 ```bash
-git clone https://github.com/LukeJiaoR/ai-gh-account-router.git
+git clone <repository-url>
 cd ai-gh-account-router
 ./install.sh
 ```
 
-The wrapper and `ai-gh-init` are always installed to:
+The installer places the wrapper and setup command at:
 
 ```text
 ~/.local/bin/gh
 ~/.local/bin/ai-gh-init
 ```
 
-The agent skill install is interactive. The installer shows known agent skill roots and asks where to install `SKILL.md`.
-
-Missing agent directories are **not** created unless you explicitly choose them.
-
-Interactive options:
-
-```text
-1) Install to existing agent roots only
-2) Choose agents manually (creates selected missing roots)
-3) Skip skill install
-4) Install to all known roots (creates missing roots)
-```
-
-Known local skill roots:
-
-```text
-~/.agent-skills/github-account-router/SKILL.md
-~/.codex/skills/github-account-router/SKILL.md
-~/.claude/skills/github-account-router/SKILL.md
-~/.agy/skills/github-account-router/SKILL.md
-```
-
-Upgrades remove the legacy `github-ai-account/SKILL.md` copy so agents do not discover duplicate router skills.
-
-Restart your shell or run:
+Restart the shell, or reload its configuration and command cache:
 
 ```bash
 source ~/.zshrc
 hash -r
 ```
 
-Verify:
+Verify that the wrapper is first on `PATH`:
 
 ```bash
 which gh
 type -a gh
 ```
 
-Expected first result:
+The original GitHub CLI path is recorded in `~/.config/ai-gh/real-gh-path`.
 
-```text
-/Users/you/.local/bin/gh
-```
+### Agent instructions
 
-The original GitHub CLI path is stored at:
+The interactive installer can install the bundled `SKILL.md` into existing supported agent directories, selected directories, all known directories, or none.
 
-```text
-~/.config/ai-gh/real-gh-path
-```
-
----
-
-## Non-interactive install
-
-For bootstrap scripts or CI-like setup, control skill installation with `AI_GH_INSTALL_SKILLS`:
+For non-interactive installation, set `AI_GH_INSTALL_SKILLS`:
 
 ```bash
 AI_GH_INSTALL_SKILLS=none ./install.sh
@@ -211,121 +106,88 @@ AI_GH_INSTALL_SKILLS=all ./install.sh
 AI_GH_INSTALL_SKILLS=codex,claude,agy ./install.sh
 ```
 
-Modes:
+When stdin is not interactive and the variable is unset, `existing` mode is used. Missing agent directories are created only when explicitly selected.
 
-```text
-none      skip skill install
-existing  install only to existing known skill roots; do not create missing roots
-all       install to all known roots; create missing roots
-list      comma-separated ids: generic,codex,claude,agy
-```
+Portable instruction templates are available in `agent-instructions/` for tools that cannot discover skills automatically.
 
-When stdin is not interactive and `AI_GH_INSTALL_SKILLS` is unset, the installer uses `existing` mode.
+## Configure a repository
 
-If an agent uses a different skill directory, copy `agent-instructions/SKILL.md` there manually.
-
----
-
-## Per-repository setup
-
-Inside a repository:
+Run this inside a Git repository:
 
 ```bash
 ai-gh-init
 ```
 
-You will be asked to choose from currently logged-in GitHub CLI accounts.
-
-You can also set it directly:
+Choose one of the accounts already logged in to GitHub CLI. For scripts, an account can be supplied directly:
 
 ```bash
-ai-gh-init LukeJiaoR
-ai-gh-init ranjugao
-ai-gh-init your-bot-account
+ai-gh-init work-account
 ```
 
-Inspect the current repo tag:
+Inspect the local tag and confirm the routed identity:
 
 ```bash
 gh ai-account
-```
-
-Test routed identity:
-
-```bash
 gh api user --jq .login
 ```
 
----
-
-## Agent usage
-
-Once installed, agents do **not** need a special command.
-
-They should simply use normal `gh` commands:
+Agents and scripts can then use normal commands:
 
 ```bash
 gh pr list
 gh issue list
 gh pr view 123
 gh pr checks 123
-gh repo sync --branch dev
 ```
 
-If the repo has `.ai-gh-account`, the wrapper selects the tagged account. If not, `gh` behaves normally.
+Do not use `gh auth switch` in routed workflows, and do not infer the required account from the repository owner.
 
-`GitHub Account Router` is the single agent-skill entry point for these commands. In agent runtimes that sandbox network access or macOS Keychain credentials, the skill also instructs the agent to run authenticated `gh` commands through the runtime's approved host/external execution mechanism. That execution approval does not authorize GitHub-side writes; mutations still require explicit user direction.
+## Sandboxed agent runtimes
 
-### Sandbox fast-fail
-
-Inside Codex seatbelt, network- or credential-dependent commands stop before real `gh` runs:
+In a restricted Codex seatbelt, authenticated commands stop before the original `gh` runs and print:
 
 ```text
 GH_EXTERNAL_EXECUTION_REQUIRED
-gh wrapper: Codex seatbelt blocks authenticated GitHub access.
-gh wrapper: retry this command with sandbox_permissions="require_escalated".
 ```
 
-The wrapper exits `77`. Retry the same command through approved external execution. Purely local help, version, and router diagnostic commands remain available. This behavior does not govern `git` commands; Git metadata writes may need their own sandbox approval.
+The wrapper exits with status `77`. Retry the same command through the runtime's approved external execution mechanism. Local help, version, and router diagnostic commands remain available.
 
----
+External execution approval only grants access to the credential store or network. It does not authorize GitHub-side changes; agents must still obtain explicit authorization before creating or modifying remote resources.
 
-## Portable agent instructions
+## Repository sync
 
-This repo includes portable agent instructions under:
+The router does not affect `git pull`, `git fetch`, or `git push`, because Git uses its own authentication path.
 
-```text
-agent-instructions/
+For a GitHub CLI-native sync operation, use:
+
+```bash
+gh repo sync
+gh repo sync --branch main
+gh repo sync --source upstream-owner/upstream-repo --branch main
 ```
 
-Templates:
+`gh repo sync` is not a full replacement for `git pull`; local merge and rebase workflows should continue to use Git directly.
 
-```text
-agent-instructions/SKILL.md     # portable SKILL.md-style instruction
-agent-instructions/CODEX.md     # Codex-oriented fallback snippet
-agent-instructions/CLAUDE.md    # Claude-oriented fallback snippet
-agent-instructions/CURSOR.md    # Cursor-oriented fallback snippet
-agent-instructions/OPENCLAW.md  # OpenClaw-style fallback snippet
-agent-instructions/AGENTS.md    # generic repo-agent fallback snippet
-```
+## Security model
 
-The important rule is the same for every agent:
+- Tokens are never written to the repository.
+- The local tag contains only an account login.
+- The tag is excluded through `.git/info/exclude`.
+- Only a narrow allowlist of commands is routed.
+- `GH_TOKEN` is scoped to one command invocation.
+- Invalid and empty account tags fail closed.
+- Global GitHub CLI commands keep their normal behavior.
+- Agent skill directories are not created without explicit selection.
 
-> Use `gh` normally. Do not use `gh auth switch`. Do not infer account from repo owner. Let the local wrapper route repo-scoped commands, and use approved host execution when the runtime restricts network or credential access.
-
-`agent-instructions/SKILL.md` is the canonical agent contract and the single skill entry point. The runtime-specific files are fallback snippets for systems that cannot discover skills; they retain the same host-execution, identity-verification, and write-authorization boundaries.
-
----
+The tool routes GitHub CLI authentication only. Configure SSH aliases or Git credential helpers separately for multi-account Git operations.
 
 ## Bypass
 
-Temporarily bypass the wrapper:
+To run the original GitHub CLI without routing for one command:
 
 ```bash
 GH_AI_BYPASS=1 gh auth status
 ```
-
----
 
 ## Uninstall
 
@@ -334,52 +196,8 @@ GH_AI_BYPASS=1 gh auth status
 hash -r
 ```
 
-This removes:
-
-```text
-~/.local/bin/gh
-~/.local/bin/ai-gh-init
-~/.agent-skills/github-account-router/SKILL.md
-~/.codex/skills/github-account-router/SKILL.md
-~/.claude/skills/github-account-router/SKILL.md
-~/.agy/skills/github-account-router/SKILL.md
-```
-
-It does not delete your original GitHub CLI.
-
----
-
-## Security model
-
-This tool intentionally has a small surface area:
-
-- no tokens are written to repositories
-- `.ai-gh-account` contains only an account name
-- `.ai-gh-account` is ignored through `.git/info/exclude`
-- the wrapper uses a narrow allowlist of routed commands
-- global/bootstrap commands fall back to real `gh`
-- invalid or empty account tags fail closed
-- agents do not need to know or handle raw tokens
-- missing agent skill directories are not created unless the user explicitly chooses them
-
----
-
-## What this does not solve
-
-This controls GitHub CLI authentication for `gh` commands.
-
-It does **not** fully control:
-
-```bash
-git push
-git fetch
-git pull
-```
-
-Those use Git's own authentication path. For multi-account Git operations, prefer repo-specific SSH aliases or explicit Git credential configuration.
-
----
+The uninstaller removes the wrapper, `ai-gh-init`, and installed copies of the bundled agent skill. It does not remove the original GitHub CLI or sign out any account.
 
 ## License
 
-MIT
+[MIT](LICENSE)
